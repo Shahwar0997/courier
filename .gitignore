@@ -1,0 +1,16 @@
+# Files Git should ignore: things tools make, and secrets.
+__pycache__/
+.pytest_cache/
+firmware/.pio/
+.env
+node_modules/
+# Written by the courier simulator in CI (tools/courier/cli.mjs run --events/--json).
+courier-events.txt
+courier-report.json
+# Private signing keys (Stop 17: `cli.mjs keygen` writes <name>.pem, <name>.pub and <name>.h). Never commit
+# a private key; the .pub and .h (the public key) are safe to share.
+*.pem
+# The robots' flash memory, written by `cli.mjs run/fleet --flash flash` (Stops 17–18).
+flash/
+# Camera datasets made by `cli.mjs dataset --out data/...` (Stop 20): large, and made again on demand.
+data/

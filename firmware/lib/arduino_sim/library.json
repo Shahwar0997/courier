@@ -1,0 +1,6 @@
+{
+  "name": "arduino_sim",
+  "version": "0.1.0",
+  "description": "A stand-in for the Arduino functions, so firmware builds and runs on this computer in robot time (env sim). Replaced by the Courier simulator.",
+  "platforms": "native"
+}

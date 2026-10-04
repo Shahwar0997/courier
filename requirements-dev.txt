@@ -1,0 +1,4 @@
+# The Python tools this repo uses. The Codespace installs them for you; CI installs them too.
+# Versions are pinned (exact), so everyone gets the same tools.
+pytest==9.1.1
+platformio==6.2.0

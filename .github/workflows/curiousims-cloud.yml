@@ -1,0 +1,49 @@
+# .github/workflows/curiousims-cloud.yml — deploy your fleet server to <name>.curiousims.run
+#
+# ⚠ DISABLED. This is a placeholder: Curious Sims Cloud v0 is still a proposal (ADR 0008,
+#   "proposed"), so there is nowhere to deploy to yet. It only runs if started by hand, and even
+#   then its job is switched off (`if: false`). You'll switch it on in Stop 15 ("Ship the server"),
+#   once Cloud v0 is accepted and built. Until then, leave it alone.
+#
+# What it will do (ADR 0008 §4.1): on every push to main,
+#   1. pack the commit's files into one archive (at most 4 MB);
+#   2. ask GitHub for a short-lived OIDC token: a signed note that says "this run is from repo X,
+#      branch main". It lives a few minutes, so there's no password to store or leak;
+#   3. send the archive to Curious Sims with that token. Curious Sims checks the token, builds
+#      your server and starts it at https://<name>.curiousims.run;
+#   4. wait and print whether the deploy worked.
+#
+# When Cloud v0 is accepted, the switch-on change is: add the `push` trigger, add the
+# `id-token: write` permission, remove `if: false`.
+
+name: curiousims-cloud (disabled)
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+
+permissions:
+  contents: read
+  # id-token: write   # needed for step 2; added when this is switched on
+
+jobs:
+  deploy:
+    if: false  # DISABLED until Cloud v0 exists (ADR 0008, proposed)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: pack the source (at most 4 MB)
+        run: |
+          git archive --format=tar.gz -o source.tar.gz "$GITHUB_SHA"
+          size=$(stat -c %s source.tar.gz)
+          if [ "$size" -gt 4194304 ]; then
+            echo "✗ Your source is $((size / 1024)) KB; the limit is 4096 KB. Keep data and models out of the repo."
+            exit 1
+          fi
+      - name: deploy
+        run: |
+          echo "Not built yet: the token request and upload arrive with Cloud v0 (ADR 0008 §4.1)."
+          exit 1

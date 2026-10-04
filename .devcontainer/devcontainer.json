@@ -1,0 +1,35 @@
+// .devcontainer/devcontainer.json — the recipe for your Codespace.
+// When you create a Codespace, GitHub reads this file to set up the computer: which tools to
+// install and which ports to open. You don't need to change it.
+{
+  "name": "Courier",
+  // Debian Linux with Python 3.12 and the usual developer tools (git, a C++ compiler).
+  "image": "mcr.microsoft.com/devcontainers/python:3.2.3-3.12-trixie",
+  "features": {
+    // Docker, for the services in compose.yaml (from Stop 8). "moby": false installs Docker's
+    // own packages; the Moby ones aren't available for this Debian version.
+    "ghcr.io/devcontainers/features/docker-in-docker:4.1.2": { "moby": false },
+    // Node.js, for the robot simulator that `npm run sim` runs (tools/courier/). Same major
+    // version as CI.
+    "ghcr.io/devcontainers/features/node:2.1.0": { "version": "24" }
+  },
+  // Runs once, when the Codespace is created: installs pytest and PlatformIO, then downloads
+  // PlatformIO's simulator build tools, libraries and test tool so your first `pio run` and
+  // `pio test` are quick, and installs the simulator's compiler for `npm run sim`.
+  "postCreateCommand": "pip install --user -r requirements-dev.txt && pio pkg install -d firmware -e sim && pio pkg install -d firmware -e native && npm ci",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "Simulator", "onAutoForward": "notify" },
+    "5432": { "label": "Postgres (Stop 8)", "onAutoForward": "silent" },
+    "19092": { "label": "Redpanda (Stop 18)", "onAutoForward": "silent" },
+    "1883": { "label": "MQTT (Stop 12)", "onAutoForward": "silent" }
+  },
+  "hostRequirements": { "cpus": 2 },
+  "customizations": {
+    "codespaces": { "openFiles": ["README.md"] },
+    "vscode": {
+      "extensions": ["ms-python.python"],
+      "settings": { "python.testing.pytestEnabled": true, "python.testing.pytestArgs": ["planner", "cli"] }
+    }
+  }
+}

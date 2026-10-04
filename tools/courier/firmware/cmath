@@ -1,0 +1,41 @@
+// <cmath> for the Courier simulator: math.h's functions in namespace std too (std::sin, std::sqrt…),
+// with float overloads, so C++-style firmware builds the same as on the chip.
+#ifndef COURIER_SIM_CMATH
+#define COURIER_SIM_CMATH
+
+#include <math.h>
+
+namespace std {
+using ::sin; using ::cos; using ::tan; using ::asin; using ::acos; using ::atan; using ::atan2;
+using ::exp; using ::log; using ::log10; using ::log2; using ::pow; using ::sqrt; using ::hypot;
+using ::fabs; using ::floor; using ::ceil; using ::trunc; using ::round; using ::lround;
+using ::fmod; using ::modf; using ::fmin; using ::fmax; using ::copysign; using ::ldexp;
+using ::scalbn; using ::frexp; using ::isnan; using ::isinf; using ::isfinite; using ::signbit;
+inline float sin(float x) { return ::sinf(x); }
+inline float cos(float x) { return ::cosf(x); }
+inline float tan(float x) { return ::tanf(x); }
+inline float asin(float x) { return ::asinf(x); }
+inline float acos(float x) { return ::acosf(x); }
+inline float atan(float x) { return ::atanf(x); }
+inline float atan2(float y, float x) { return ::atan2f(y, x); }
+inline float exp(float x) { return ::expf(x); }
+inline float log(float x) { return ::logf(x); }
+inline float log10(float x) { return ::log10f(x); }
+inline float log2(float x) { return ::log2f(x); }
+inline float pow(float x, float y) { return ::powf(x, y); }
+inline float sqrt(float x) { return ::sqrtf(x); }
+inline float hypot(float x, float y) { return ::hypotf(x, y); }
+inline float fabs(float x) { return ::fabsf(x); }
+inline float abs(float x) { return ::fabsf(x); }
+inline double abs(double x) { return ::fabs(x); }
+inline float floor(float x) { return ::floorf(x); }
+inline float ceil(float x) { return ::ceilf(x); }
+inline float trunc(float x) { return ::truncf(x); }
+inline float round(float x) { return ::roundf(x); }
+inline float fmod(float x, float y) { return ::fmodf(x, y); }
+inline float fmin(float a, float b) { return ::fminf(a, b); }
+inline float fmax(float a, float b) { return ::fmaxf(a, b); }
+inline float copysign(float x, float s) { return ::copysignf(x, s); }
+}  // namespace std
+
+#endif

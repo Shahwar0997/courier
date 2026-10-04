@@ -1,0 +1,72 @@
+# compose.yaml — the services your fleet server will use in later stops, run in Docker.
+#
+# You don't need this until Stop 8. Docker runs each service in its own "container" (a small,
+# sealed-off computer inside your Codespace), and Docker Compose starts them all from this one
+# file:
+#     docker compose up -d      start them in the background
+#     docker compose ps         see what's running and whether it's healthy
+#     docker compose down       stop them (your data is kept; add -v to delete it too)
+#
+# Every port is opened on 127.0.0.1 ("this computer only"), so nothing here is reachable from
+# the internet. The password below is for this practice database only; never reuse it.
+
+services:
+  # Postgres: the database. The fleet server stores robots, missions and telemetry here (Stop 8).
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: courier
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-courier-local-only}
+      POSTGRES_DB: courier
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U courier -d courier"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Redpanda: a Kafka-compatible event stream, for a hundred robots' telemetry (Stop 18).
+  # Programs in your Codespace connect to localhost:19092.
+  redpanda:
+    image: redpandadata/redpanda:v26.2.3
+    command:
+      - redpanda
+      - start
+      - --mode=dev-container
+      - --smp=1
+      - --memory=512M
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
+    ports:
+      - "127.0.0.1:19092:19092"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -Eq 'Healthy:.+true'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Mosquitto: an MQTT broker. Robots publish telemetry and receive commands through it (Stop 12);
+  # Stop 18's fleet of simulated robots uses it too:
+  #     node tools/courier/cli.mjs fleet firmware --robots 10 --mqtt mqtt://localhost:1883
+  mqtt:
+    image: eclipse-mosquitto:2.1.2-alpine
+    ports:
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -t '$$SYS/broker/version' -C 1 -W 3"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres-data:
+  redpanda-data:
+  mqtt-data:

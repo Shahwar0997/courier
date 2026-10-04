@@ -1,0 +1,5 @@
+{
+  "name": "odometry",
+  "version": "0.1.0",
+  "description": "Your odometry (Stop 5): wheel ticks added up into a pose. No hardware calls, so host tests can run it."
+}

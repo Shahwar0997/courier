@@ -1,0 +1,14 @@
+{
+  "name": "courier",
+  "private": true,
+  "description": "Node is only for the robot simulator (tools/courier/), which `npm run sim` and CI run. Your code is in planner/, firmware/ and cli/.",
+  "scripts": {
+    "sim": "node tools/courier/cli.mjs run firmware --map maps/office.txt"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@yowasp/clang": "22.0.0-git20542-10"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "courier",
+  "version": "0.1.0",
+  "description": "The Courier robot's hardware layer: pin names for the simulator and the kit."
+}

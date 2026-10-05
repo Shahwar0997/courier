@@ -9,63 +9,62 @@
 import sys
 from collections import deque
 
-file=sys.argv[1]
 def read_map(file):
     with open(file) as f:
         return [line.rstrip("\n") for line in f if line.strip()]          
-grid=read_map(file)
 
-def find(row, c):
+def find(grid, c):
     for row in range(len(grid)):
-        col=grid[row].find(c)
-        if col!=-1:
+        col = grid[row].find(c)
+        if col != -1:
             return (row, col)
     return None
 
-MOVES={"N":(-1,0), "E":(0,1), "S":(1,0), "W":(0,-1)}
+MOVES = {"N": (-1, 0), "E": (0, 1), "S": (1, 0), "W": (0, -1)}
+
 def plan(grid):
-    
-    start=find(grid, 'S')
-    end=find(grid, "G")
+    start = find(grid, 'S')
+    end = find(grid, 'G')
     if start is None or end is None:
         raise ValueError("no route from S to G")
         
-    visited={start:None}
-    q=deque([start])
+    visited = {start: None}
+    q = deque([start])
     while q:
-        pos=q.popleft()
-        if pos==end:
+        pos = q.popleft()
+        if pos == end:
             break
-        for dir,coor  in MOVES.items():
-            x,y=pos[0]+coor[0], pos[1]+coor[1]
-            if 0<=x<len(grid) and 0<=y<len(grid[0]) and grid[x][y]!='#' and (x,y) not in visited:
-                visited[(x,y)]=(pos, dir)
-                q.append((x,y))
+        for dir, coor in MOVES.items():
+            x, y = pos[0] + coor[0], pos[1] + coor[1]
+            if 0 <= x < len(grid) and 0 <= y < len(grid[0]) and grid[x][y] != '#' and (x, y) not in visited:
+                visited[(x, y)] = (pos, dir)
+                q.append((x, y))
+                
     if end not in visited:
         return None
-    curr,d=visited[end]
-    res=[]
-    while curr!=start:
+        
+    curr, d = visited[end]
+    res = []
+    while curr != start:
         res.append(d)
-        curr,d=visited[curr]
+        curr, d = visited[curr]
     res.append(d)
-    route=''.join(res)
+    res.reverse()  # Reverse the path so it goes from start to end
+    route = ''.join(res)
     return route  
-result=plan(grid)
-# print(result)
+
 def main(argv):
-    if len(argv)!=2:
+    if len(argv) != 2:
         print("usage: python planner/plan.py <map file>", file=sys.stderr)
         return 2
     try:
-        print(argv[1])
-        grid=read_map(argv[1])
-        
+        grid = read_map(argv[1])
     except FileNotFoundError:
         print(f"can't open {argv[1]}", file=sys.stderr)
         return 2
+        
     try:
-        route=plan(grid)
+        route = plan(grid)
     except ValueError as err:
         print(err, file=sys.stderr)
         return 2
@@ -73,9 +72,11 @@ def main(argv):
     if route is None:
         print("no route from S to G", file=sys.stderr)
         return 1
+        
     print(route)
     return 0
-if __name__=="__main__":
+
+if __name__ == "__main__":
     sys.exit(main(sys.argv))
     
         

@@ -21,10 +21,15 @@ def find(row, c):
         if col!=-1:
             return (row, col)
     return None
-start=find(grid, 'S')
-end=find(grid, "G")
+
 MOVES={"N":(-1,0), "E":(0,1), "S":(1,0), "W":(0,-1)}
-def bfs(start, end):
+def plan(grid):
+    
+    start=find(grid, 'S')
+    end=find(grid, "G")
+    if start is None or end is None:
+        raise ValueError("no route from S to G")
+        
     visited={start:None}
     q=deque([start])
     while q:
@@ -36,14 +41,41 @@ def bfs(start, end):
             if 0<=x<len(grid) and 0<=y<len(grid[0]) and grid[x][y]!='#' and (x,y) not in visited:
                 visited[(x,y)]=(pos, dir)
                 q.append((x,y))
+    if end not in visited:
+        return None
     curr,d=visited[end]
     res=[]
     while curr!=start:
         res.append(d)
         curr,d=visited[curr]
     res.append(d)
-    # print(f"G reached from : {visited[end]}")
-    # print(f"No. of tiles reached: {len(visited)}")
-    return res    
-result=bfs(start, end)
-print(''.join(reversed(result)))
+    route=''.join(res)
+    return route  
+result=plan(grid)
+# print(result)
+def main(argv):
+    if len(argv)!=2:
+        print("usage: python planner/plan.py <map file>", file=sys.stderr)
+        return 2
+    try:
+        print(argv[1])
+        grid=read_map(argv[1])
+        
+    except FileNotFoundError:
+        print(f"can't open {argv[1]}", file=sys.stderr)
+        return 2
+    try:
+        route=plan(grid)
+    except ValueError as err:
+        print(err, file=sys.stderr)
+        return 2
+
+    if route is None:
+        print("no route from S to G", file=sys.stderr)
+        return 1
+    print(route)
+    return 0
+if __name__=="__main__":
+    sys.exit(main(sys.argv))
+    
+        

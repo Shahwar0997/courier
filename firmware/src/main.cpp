@@ -21,8 +21,17 @@ void setup() {
   // `const char *route = ROUTE;` next to it and drive `route` instead. With #include <courier.h>
   // at the top (from Stop 4), remove the // from this line:
   // const char *asked = courier::route(); if (asked) route = asked;
+    Serial.begin(115200);
+    Serial.println("Courier ready");
+    pinMode(LED_PIN, OUTPUT);
+    
+    
 }
 
 void loop() {
   // Runs again and again, forever.
+    digitalWrite(LED_PIN, HIGH);
+    delay(500);
+    digitalWrite(LED_PIN, LOW);
+    delay(500);
 }

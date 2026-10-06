@@ -44,10 +44,11 @@ void stopMotors(){
 }
 void forwardOneTile(){
     digitalWrite(LED_PIN, HIGH);
+    digitalWrite(LED_PIN, LOW);
     drive(180,180);
     delay(TILE_MS);
     stopMotors();
-    digitalWrite(LED_PIN, LOW);
+    
     
 }
 void turnLeft(){

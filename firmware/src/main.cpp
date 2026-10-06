@@ -11,6 +11,21 @@
 
 #include <Arduino.h>
 #include <courier_pins.h>
+
+
+const int TILE_MS=885;
+const int TURN_MS=324;
+const char* ROUTE="EEEESSSEEEEEEEEEEESSS";
+int heading=1;
+
+int headingOf(char move){
+    if (move=='N') return 0;
+    if (move=='E') return 1;
+    if (move=='S') return 2;
+    return 3;
+    
+    
+}
 void setWheel(int fwdPin, int revPin, int speed){
     if (speed>=0){
         analogWrite(fwdPin, speed);
@@ -26,6 +41,56 @@ void drive(int left, int right){
 }
 void stopMotors(){
     drive(0,0);
+}
+void forwardOneTile(){
+    digitalWrite(LED_PIN, HIGH);
+    drive(180,180);
+    delay(TILE_MS);
+    stopMotors();
+    digitalWrite(LED_PIN, LOW);
+    
+}
+void turnLeft(){
+    digitalWrite(LED_PIN, HIGH);
+    drive(-180,180);
+    delay(TURN_MS);
+    stopMotors();
+    
+    
+}
+void turnRight(){
+    digitalWrite(LED_PIN, HIGH);
+    drive(180,-180);
+    delay(TURN_MS);
+    stopMotors();
+    
+}
+void turnBy(int n){
+    if (n==1){
+        turnRight();
+    } else if(n==2){
+        turnRight();
+        turnRight();
+    } else if(n==3){
+        turnLeft();
+    }
+    return;
+}
+void followRoute(const char* route){
+    for(int i=0; route[i]!='\0'; i++){
+        Serial.print("move ");
+        Serial.print(i+1);
+        Serial.print(": ");
+        Serial.print(route[i]);
+        Serial.print(", quarter-turns ");
+        int turn=(headingOf(route[i])-heading+4)%4;
+        Serial.println(turn);
+        turnBy(turn);
+        forwardOneTile();
+        heading=headingOf(route[i]);
+    }
+    Serial.println("Arrived");
+    
 }
 void setup() {
   // Runs once, at power-on.
@@ -43,20 +108,23 @@ void setup() {
     pinMode(LEFT_REV, OUTPUT);
     pinMode(RIGHT_FWD, OUTPUT);
     pinMode(RIGHT_REV, OUTPUT);
+    followRoute(ROUTE);
     
-    
-    
+    // for (int i=0; i<4; i++){
+    //     Serial.print("side ");
+    //     Serial.println(i+1);
+    //     forwardOneTile();
+    //     turnRight();
+    // }
+    // stopMotors();
     
 }
+
 
 void loop() {
   // Runs again and again, forever.
     digitalWrite(LED_PIN, HIGH);
     delay(500);
     digitalWrite(LED_PIN, LOW);
-    delay(500);
-    // setWheel(LEFT_FWD, LEFT_REV, 180);
-    // setWheel(LEFT_FWD, LEFT_REV, -180);
-    // setWheel(LEFT_FWD, LEFT_REV, 180);
-    
+    delay(500);    
 }

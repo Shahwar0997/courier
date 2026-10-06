@@ -11,7 +11,22 @@
 
 #include <Arduino.h>
 #include <courier_pins.h>
-
+void setWheel(int fwdPin, int revPin, int speed){
+    if (speed>=0){
+        analogWrite(fwdPin, speed);
+        analogWrite(revPin, 0);
+    }else{
+        analogWrite(fwdPin, 0);
+        analogWrite(revPin, -speed);   
+    }    
+}
+void drive(int left, int right){
+    setWheel(LEFT_FWD, LEFT_REV, left);
+    setWheel(RIGHT_FWD, RIGHT_REV, right);   
+}
+void stopMotors(){
+    drive(0,0);
+}
 void setup() {
   // Runs once, at power-on.
 
@@ -24,6 +39,12 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Courier ready");
     pinMode(LED_PIN, OUTPUT);
+    pinMode(LEFT_FWD, OUTPUT);
+    pinMode(LEFT_REV, OUTPUT);
+    pinMode(RIGHT_FWD, OUTPUT);
+    pinMode(RIGHT_REV, OUTPUT);
+    
+    
     
     
 }
@@ -34,4 +55,8 @@ void loop() {
     delay(500);
     digitalWrite(LED_PIN, LOW);
     delay(500);
+    // setWheel(LEFT_FWD, LEFT_REV, 180);
+    // setWheel(LEFT_FWD, LEFT_REV, -180);
+    // setWheel(LEFT_FWD, LEFT_REV, 180);
+    
 }

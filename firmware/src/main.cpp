@@ -11,121 +11,135 @@
 
 #include <Arduino.h>
 #include <courier_pins.h>
+#include <courier.h>
+#include "motors.h"
+#include "sensors.h"
 
+const unsigned long SPEED=180;
+const unsigned long TILE_MS=885;
+const unsigned long TURN_MS=324;
+const unsigned long READ_MS=60;
+const int STOP_CM=20;
+const int GO_CM=30;
 
-const int TILE_MS=885;
-const int TURN_MS=324;
 const char* ROUTE="EEEESSSEEEEEEEEEEESSS";
-int heading=1;
+enum class State {IDLE, TURNING, DRIVING, BLOCKED, DONE};
+State state= State::IDLE;
+
+int dir=1;
+int move=0;
+
+unsigned long stepStart=0;
+unsigned long msLeft=0;
+unsigned long turnMs=0;
+unsigned long lastRead=0;
+int distance=400;
+unsigned long lastBlink=0;
+bool ledOn=false;
 
 int headingOf(char move){
     if (move=='N') return 0;
     if (move=='E') return 1;
     if (move=='S') return 2;
-    return 3;
-    
-    
+    return 3;    
 }
-void setWheel(int fwdPin, int revPin, int speed){
-    if (speed>=0){
-        analogWrite(fwdPin, speed);
-        analogWrite(revPin, 0);
-    }else{
-        analogWrite(fwdPin, 0);
-        analogWrite(revPin, -speed);   
-    }    
-}
-void drive(int left, int right){
-    setWheel(LEFT_FWD, LEFT_REV, left);
-    setWheel(RIGHT_FWD, RIGHT_REV, right);   
-}
-void stopMotors(){
-    drive(0,0);
-}
-void forwardOneTile(){
-    digitalWrite(LED_PIN, HIGH);
-    digitalWrite(LED_PIN, LOW);
-    drive(180,180);
-    delay(TILE_MS);
-    stopMotors();
-    
-    
-}
-void turnLeft(){
-    digitalWrite(LED_PIN, HIGH);
-    drive(-180,180);
-    delay(TURN_MS);
-    stopMotors();
-    
-    
-}
-void turnRight(){
-    digitalWrite(LED_PIN, HIGH);
-    drive(180,-180);
-    delay(TURN_MS);
-    stopMotors();
-    
-}
-void turnBy(int n){
-    if (n==1){
-        turnRight();
-    } else if(n==2){
-        turnRight();
-        turnRight();
-    } else if(n==3){
-        turnLeft();
-    }
-    return;
-}
-void followRoute(const char* route){
-    for(int i=0; route[i]!='\0'; i++){
-        Serial.print("move ");
-        Serial.print(i+1);
-        Serial.print(": ");
-        Serial.print(route[i]);
-        Serial.print(", quarter-turns ");
-        int turn=(headingOf(route[i])-heading+4)%4;
-        Serial.println(turn);
-        turnBy(turn);
-        forwardOneTile();
-        heading=headingOf(route[i]);
-    }
-    Serial.println("Arrived");
-    
-}
-void setup() {
-  // Runs once, at power-on.
 
-  // From Stop 5: let the simulator's test drives (npm run sim -- --square, --straight 10) choose
-  // the route. courier::route() is the route the simulator asks for, or nullptr when it asks for
-  // none; then your own route stays. Keep ROUTE (Stop 3's check reads it), add
-  // `const char *route = ROUTE;` next to it and drive `route` instead. With #include <courier.h>
-  // at the top (from Stop 4), remove the // from this line:
-  // const char *asked = courier::route(); if (asked) route = asked;
+void setLed(bool on){
+    ledOn=on;
+    digitalWrite(LED_PIN, on? HIGH: LOW);
+}
+
+int cmLeft(){
+    if (state==State::BLOCKED) return 30* msLeft/ TILE_MS;
+    unsigned long driven=millis()- stepStart;
+    if (driven>TILE_MS) driven=TILE_MS;
+    return 30* (TILE_MS-driven)/ TILE_MS;
+}
+
+bool inTheWay(int cm, int limit){
+    return cm<limit&&cm <cmLeft()+(limit-STOP_CM);
+}
+void startMove(){
+    if (ROUTE[move]=='\0'){
+        stopMotors();
+        state=State::DONE;
+        setLed(false);
+        Serial.println("DONE");
+        return;
+    }
+
+    int target=headingOf(ROUTE[move]);
+    int quarterTurns=(target-dir+4)%4;
+    dir=target;
+    if (quarterTurns==0) turnMs=0;
+    else if (quarterTurns==2) turnMs=2*TURN_MS;
+    else turnMs=TURN_MS;
+    if (quarterTurns==3) drive(-SPEED, SPEED);
+    else if (quarterTurns!=0) drive(SPEED, -SPEED);
+    stepStart=millis();
+    state=State::TURNING;
+    setLed(true);
+    
+}
+void setup(){
     Serial.begin(115200);
     Serial.println("Courier ready");
     pinMode(LED_PIN, OUTPUT);
-    pinMode(LEFT_FWD, OUTPUT);
-    pinMode(LEFT_REV, OUTPUT);
-    pinMode(RIGHT_FWD, OUTPUT);
-    pinMode(RIGHT_REV, OUTPUT);
-    followRoute(ROUTE);
-    
-    // for (int i=0; i<4; i++){
-    //     Serial.print("side ");
-    //     Serial.println(i+1);
-    //     forwardOneTile();
-    //     turnRight();
-    // }
-    // stopMotors();
-    
+    startMove();
 }
 
 
 void loop() {
   // Runs again and again, forever.
-    digitalWrite(LED_PIN, HIGH);
-    delay(500);
-    digitalWrite(LED_PIN, LOW);
-    delay(500);    
+    unsigned long now=millis();
+    if (now-lastRead>=READ_MS){
+        lastRead=now;
+        distance=readDistance();
+    }
+    switch(state){
+        case State::TURNING:
+            if (now-stepStart>=turnMs){
+                emptyWindow();
+                distance=400;
+                drive(SPEED, SPEED);
+                stepStart=now;
+                state=State::DRIVING;
+                Serial.print(ROUTE[move]);
+                Serial.print(' ');
+            }
+            break;
+
+        case State::DRIVING:
+            if (now-stepStart>=TILE_MS){
+                stopMotors();
+                move++;
+                startMove();
+            }else if (inTheWay(distance, STOP_CM)){
+                stopMotors();
+                msLeft=TILE_MS-(now-stepStart);
+                state=State::BLOCKED;
+                Serial.print("BLOCKED ");
+                Serial.println(distance);
+            }
+            break;
+
+        case State::BLOCKED:
+            if (now-lastBlink>=500){
+                lastBlink=now;
+                setLed(!ledOn);
+            }
+            if (!inTheWay(distance, GO_CM)){
+                stepStart=now-(TILE_MS-msLeft);
+                drive(SPEED, SPEED);
+                state=State::DRIVING;
+                setLed(true);
+                Serial.print("GO ");
+                Serial.println(distance);
+            }
+            break;
+        case State::IDLE:
+        case State::DONE:
+        break;
+    }        
 }
+            

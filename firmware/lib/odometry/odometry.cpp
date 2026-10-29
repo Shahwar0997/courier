@@ -8,11 +8,21 @@
 // sin() and cos() come from <math.h>.
 
 #include "odometry.h"
+#include <math.h>
 
 Pose step(Pose p, long dLeft, long dRight, float cmPerTick, float wheelbaseCm) {
-  (void)dLeft;  // "(void)x;" says "not used yet", so the compiler doesn't warn about it
-  (void)dRight;
-  (void)cmPerTick;
-  (void)wheelbaseCm;
+    float left=dLeft*cmPerTick;
+    float right=dRight* cmPerTick;
+    float move=(left+right)/2;
+    float turn=(left-right)/wheelbaseCm;
+    p.heading+=turn/2;
+    p.east+=move*sin(p.heading);
+    p.north+=move*cos(p.heading);
+    p.heading+=turn/2;
+    
+    
+
+
+    
   return p;
 }
